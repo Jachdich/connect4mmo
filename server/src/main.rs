@@ -52,7 +52,7 @@ impl Board {
         let mut data =  [[Piece::None; 7]; 6];
         for x in 0..7 {
             for y in 0..6 {
-                data[y][x] = Piece::from_u8(buf[y * 6 + x]);
+                data[y][x] = Piece::from_u8(buf[y * 7 + x]);
             }
         }
         Board { data }
@@ -62,7 +62,7 @@ impl Board {
         let mut buf = [0 as u8; 7 * 6];
         for x in 0..7 {
             for y in 0..6 {
-               buf[y * 6 + x] = self.data[y][x].to_u8();
+               buf[y * 7 + x] = self.data[y][x].to_u8();
             }
         }
         buf
@@ -100,16 +100,9 @@ impl Board {
     }
 }
 
-fn main() {
+fn run_game(mut conns: Vec<TcpStream>) {
     let mut board = Board::new();
     let mut next_player = Piece::Red;
-    let listener = TcpListener::bind("127.0.0.1:42069").unwrap();
-    let mut conns: Vec<TcpStream> = Vec::new();
-    for stream in listener.incoming() {
-        conns.push(stream.unwrap());
-        if conns.len() == 2 { break; }
-    }
-    
     loop {
         let mut buf: [u8; 1] = [0; 1];
         let idx = if next_player == Piece::Red { 0 } else { 1 };
@@ -123,13 +116,16 @@ fn main() {
                 if pos == 0 {
                     //disconnected
                     conns[idx].shutdown(Shutdown::Both).unwrap();
+                    conns[not_idx].shutdown(Shutdown::Both).unwrap();
                 } else {
                     board.place(pos as usize, next_player);
+                    board.print_board();
                 }
             },
             Err(_) => {
                 eprintln!("An error occurred, terminating connection with {}", conns[idx].peer_addr().unwrap());
                 conns[idx].shutdown(Shutdown::Both).unwrap();
+                conns[not_idx].shutdown(Shutdown::Both).unwrap();
             }
         }
         for mut conn in &conns {
@@ -138,6 +134,26 @@ fn main() {
         }
 
         next_player = if next_player == Piece::Red { Piece::Yellow } else { Piece::Red };
+    }
+}
 
+fn assign_match(conns: &mut Vec<TcpStream>) {
+    if conns.len() >= 2 {
+        //make a game with the first two
+        let mut new_conns = Vec::<TcpStream>::new();
+        new_conns.push(conns.remove(0));
+        new_conns.push(conns.remove(0));
+        std::thread::spawn(move || {
+            run_game(new_conns);
+        });
+    }
+}
+
+fn main() {
+    let listener = TcpListener::bind("0.0.0.0:42069").unwrap();
+    let mut conns: Vec<TcpStream> = Vec::new();
+    for stream in listener.incoming() {
+        conns.push(stream.unwrap());
+        assign_match(&mut conns);
     }
 }

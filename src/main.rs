@@ -52,7 +52,7 @@ impl Board {
         let mut data =  [[Piece::None; 7]; 6];
         for x in 0..7 {
             for y in 0..6 {
-                data[y][x] = Piece::from_u8(buf[y * 6 + x]);
+                data[y][x] = Piece::from_u8(buf[y * 7 + x]);
             }
         }
         Board { data }
