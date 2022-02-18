@@ -60,25 +60,25 @@ impl Board {
     
     fn print_board(&self, num: usize) {
         for n in 1..8 {
-            print!("|{} {} {}", 
+            print!("┃{} {} {}", 
                 if n == num { termion::style::Invert.to_string() } else { termion::style::NoInvert.to_string() },
                 n,
                 termion::style::NoInvert,
             );
         }
-        println!("|\r");
+        println!("┃\r");
         for n in 1..8 {
-            print!("|{}---{}",
+            print!("┃{}━━━{}",
                 if n == num { termion::style::Invert.to_string() } else { termion::style::NoInvert.to_string() },
                 termion::style::NoInvert
             );
         }
-        println!("|\r");
+        println!("┃\r");
         for col in self.data.iter() {
             for row in col.iter() {
-                print!("| {} ", row);
+                print!("┃ {} ", row);
             }
-            println!("|\r\n|---|---|---|---|---|---|---|\r");
+            println!("┃\r\n┣━━━╋━━━╋━━━╋━━━╋━━━╋━━━╋━━━┫\r");
         }
     }
 
@@ -122,7 +122,7 @@ use termion::event::Key;
 use termion::event::Event;
 
 fn main() {
-    let mut stream = TcpStream::connect("127.0.0.1:42069").unwrap();
+    let mut stream = TcpStream::connect("cospox.com:42069").unwrap();
     let other_stream = stream.try_clone().unwrap();
     let mut screen = termion::screen::AlternateScreen::from(stdout()).into_raw_mode().unwrap();
 
